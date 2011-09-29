@@ -1,0 +1,17 @@
+PWGB Kernel v0.2-voodoo
+This is a fork of djp952's branch containing the EH09 kernel source with more changes.
+
+Features:
+ - Undervolted (-50mV for 200-1000 mhZ, -75mV for 100 mhZ)
+ - Voodoo-capable Ramdisk by imoseyon
+ - init.rc tweaks for better RAM usage (juwe11)
+ - SD Card speed tweak
+ - Network speed tweak
+ - Voodoo Sound v10
+ - Some changes from djp952 include:
+    - I9000 WiFi driver (elimites hotspot monitoring)
+    - Fixed setlocalversion script to fix use of closed source modules
+ - Some changes from kangtastic included:
+    - Voodoo Color v10
+    - Flashlight Fix
+    - Some other changes like CIFS support and ashmem fix
