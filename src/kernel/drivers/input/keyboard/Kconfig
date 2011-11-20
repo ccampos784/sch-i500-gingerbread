@@ -444,7 +444,6 @@ config KEYPAD_S3C
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called s3c-keypad.
-	  
 
 if KEYPAD_S3C
 
@@ -459,6 +458,7 @@ config KEYPAD_S3C_FORTE
         bool "Forte S3C Keypad"
         help
         Forte Product Key Board
+endif
 
 config S3C_KEYPAD_DEBUG
 	bool "Print debug messages for S3C keypad"
