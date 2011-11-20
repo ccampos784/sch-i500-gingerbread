@@ -77,10 +77,8 @@ enum {
 	CHARGING_MODE_BOOTING,
 	BATT_TEMP_CHECK,
 	BATT_FULL_CHECK,
-#ifdef __VZW_AUTH_CHECK__
-        AUTH_BATTERY,
-#endif
-        BATT_CHG_CURRENT_AVER,
+	AUTH_BATTERY,	// Returns valid result if __VZW_AUTH_CHECK__ is defined.
+	BATT_CHG_CURRENT_AVER,
 	BATT_TYPE,
 #ifdef __SOC_TEST__
 	SOC_TEST,
@@ -125,6 +123,7 @@ enum {
 #define RECHARGE_COND_VOLTAGE		4130000
 #endif
 #define RECHARGE_COND_TIME		(30*1000)	/* 30 seconds */
+#define RECHARGE_COND_SOC 				95		/* 95% SOC before triggering recharge condition */
 #define LOW_BATT_COND_VOLTAGE           3400
 #define LOW_BATT_COND_LEVEL             0
 
