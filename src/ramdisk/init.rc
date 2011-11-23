@@ -627,8 +627,8 @@ on boot
     setprop net.tcp.buffersize.edge    4096,87380,256960,4096,16384,256960
     setprop net.tcp.buffersize.gprs    4096,87380,256960,4096,16384,256960
     
-# Lock launcher in memory
-    setprop ro.HOME_APP_AD 1
+# Lock launcher in memory (bulletproof launcher)
+    setprop ro.HOME_APP_AD 0
     
 # +++++++++++++++++++++++++++++++++++++++++++
 # for Bluetooth
