@@ -1,15 +1,25 @@
-PWGB Kernel v0.3-voodoo
+PWGB Kernel v0.4-voodoo
 This is a fork of djp952's branch containing the EH09 kernel source with more changes.
 
 Features:
  - Overclocking support up to 1.3 gHz
- - Undervolting support
+ - Undervolting support, use Voltage Control from the market
+ - Undervolted Screen (3.0V->2.6V), RAM (1.8V->1.6V), and ADC (3.3V->3.0V)
+ - TinyRCU enabled
  - Voodoo-capable Ramdisk by imoseyon
  - SD Card speed tweak
+ - Kernel HZ set to 500 HZ
+ - User HZ set to 200 HZ
+ - Raised screen frequency from 60 to 72 - should allow more FPS
  - Voodoo Sound v10
+ - Working Flashlight mode for Camera LED
+ - Speedmod kernel color settings
+ - Lowmemorykiller tweaks
+ - Various misc. tweaks
  - Some changes from djp952 include:
     - I9000 WiFi driver (elimites hotspot monitoring)
     - Fixed setlocalversion script to fix use of closed source modules
+    - Building scripts
  - Some changes from kangtastic included:
     - Flashlight Fix
     - Some other changes like CIFS support and ashmem fix
