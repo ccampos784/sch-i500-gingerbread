@@ -52,10 +52,10 @@ WM8994_AIF2DAC_BOOST_SHIFT is decimal 10 (see wm8994_def.h).
 	2 (+12dB = loud)	result is 0x0800
 	3 (+18dB = loudest)	result is 0x0C00
 */
-static const unsigned short incall_boost_rcv  = (2 << WM8994_AIF2DAC_BOOST_SHIFT);
-static const unsigned short incall_boost_bt   = (0 << WM8994_AIF2DAC_BOOST_SHIFT);
-static const unsigned short incall_boost_spk  = (0 << WM8994_AIF2DAC_BOOST_SHIFT);
-static const unsigned short incall_boost_hp   = (0 << WM8994_AIF2DAC_BOOST_SHIFT);
+static const unsigned short incall_boost_rcv  = (3 << WM8994_AIF2DAC_BOOST_SHIFT);
+static const unsigned short incall_boost_bt   = (2 << WM8994_AIF2DAC_BOOST_SHIFT);
+static const unsigned short incall_boost_spk  = (3 << WM8994_AIF2DAC_BOOST_SHIFT);
+static const unsigned short incall_boost_hp   = (2 << WM8994_AIF2DAC_BOOST_SHIFT);
 
 /*
 	In-call Microphone Gain Information
@@ -73,7 +73,7 @@ Each step corresponds to +1.5dB of gain.
 	0x1C:  25.5dB	0x1D:  27dB	0x1E:  28.5dB	0x1F:  30dB
 */
 static const unsigned short incall_mic_gain_rcv       = 0x17;	// +18dB
-static const unsigned short incall_mic_gain_spk       = 0x0113; // djp952: changed to 0x113; original in-call boost mod was 0x13; fixes speakerphone mic volume?
+static const unsigned short incall_mic_gain_spk       = 0x1F;  // +30dB
 static const unsigned short incall_mic_gain_hp        = 0x16;	// +16.5dB
 static const unsigned short incall_mic_gain_hp_no_mic = 0x19;	// +21dB
 
