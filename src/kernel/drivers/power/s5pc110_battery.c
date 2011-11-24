@@ -198,7 +198,9 @@ static struct device_attribute s3c_battery_attrs[] = {
 	SEC_BATTERY_ATTR(charging_mode_booting),
 	SEC_BATTERY_ATTR(batt_temp_check),
 	SEC_BATTERY_ATTR(batt_full_check),
-        SEC_BATTERY_ATTR(auth_battery),	// Returns valid result if __VZW_AUTH_CHECK__ is defined.
+#ifdef __VZW_AUTH_CHECK__
+        SEC_BATTERY_ATTR(auth_battery),
+#endif
         SEC_BATTERY_ATTR(batt_chg_current_aver),
 	SEC_BATTERY_ATTR(batt_type), //to check only
 #ifdef __SOC_TEST__
@@ -1321,18 +1323,16 @@ static ssize_t s3c_bat_show_attrs(struct device *dev,
 		else 
 			i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", 0);
 		break;
-        case AUTH_BATTERY: 
 #ifdef  __VZW_AUTH_CHECK__
+        case AUTH_BATTERY: 
 		if (chg->jig_status)
 			i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", 1);
 		else
 			i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
 				(chg->bat_info.batt_health == POWER_SUPPLY_HEALTH_UNSPEC_FAILURE) ?
 				0 : 1);
-#else
-			i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", 1);
-#endif
                 break;
+#endif
         case BATT_CHG_CURRENT_AVER:
                 i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
 			chg->charging ? chg->bat_info.chg_current_adc : 0);
