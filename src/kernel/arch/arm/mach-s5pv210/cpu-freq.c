@@ -76,7 +76,7 @@ unsigned int freq_uv_table[8][3] = {
 
 unsigned int gpu[7][2] = {
    //stock  current
-    {200, 233},
+    {200, 217},
     {200, 217},
     {200, 217},
     {200, 200},
