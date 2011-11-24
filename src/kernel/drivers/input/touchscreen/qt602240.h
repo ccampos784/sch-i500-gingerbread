@@ -23,7 +23,8 @@
 #define QT_STYLUS_ENABLE
 #define FEATUE_QT_INFOBLOCK_STATIC
 #define USE_TSP_EARLY_SUSPEND
-#include <linux/i2c/qt602240_ts.h>
+#define _SUPPORT_MULTITOUCH_
+
 #ifdef QT_FIRMUP_ENABLE
 #define QT_ATCOM_TEST
 unsigned char QT602240_firmware[] = {
@@ -4609,31 +4610,6 @@ unsigned char QT602240_firmware[] = {
 
 #define NUM_OF_I2C_ADDR    4
 
-#define FULL_SCREEN_WIDTH        479
-#define MAIN_SCREEN_HEIGHT       799
-#define SOFTKEYS_SCREEN_HEIGHT   96
-#define TICKER_SCREEN_HEIGHT     96
-
-#define SOFTKEYS_WIDTH           120
-#define MAIN_SCREEN              1
-#define SOFTKEYS_SCREEN          2
-#define TICKER_SCREEN            3
-
-#define DEFAULT_PRESSURE_UP      0
-#define DEFAULT_PRESSURE_DOWN    256
-
-/*
- * Look up table for google soft keys
- * keys are in same order from left to right on device
- */
-unsigned int google_soft_keys[] =
- {
-        KEY_MENU,
-        KEY_HOME,
-        KEY_BACK,
-        KEY_SEARCH
- };
-
 uint8_t i2c_addresses[] =
 {
     I2C_APPL_ADDR_0,
@@ -4644,13 +4620,7 @@ uint8_t i2c_addresses[] =
 
 static	void	__iomem		*gpio_pend_mask_mem;
 
-#if defined (CONFIG_MACH_FORTE)
-#define IRQ_TOUCH_INT       (IRQ_EINT_GROUP6_BASE+3)
-#define INT_PEND_BASE       0xE0200A14
-#define INT_BIT_MASK        (1<<3)
-#else
-#define       INT_PEND_BASE   0xE0200A44
-#endif
+#define 	INT_PEND_BASE	0xE0200A44
 
 uint8_t QT_i2c_address;
 
@@ -5298,42 +5268,23 @@ typedef struct
 //#define _SUPPORT_TOUCH_AMPLITUDE_
 typedef struct
 {
-	uint16_t size;	/*!< size */
+	uint16_t size;	/*!<  size */
 	int16_t pressure;	/*!< dn>0, up=0, none=-1 */
 	int16_t x;			/*!< X */
 	int16_t y;			/*!< Y */
 } report_finger_info_t;
-#if defined (CONFIG_MACH_FORTE)
-#define MAX_USING_FINGER_NUM    5
-#endif
-/**
- * Additional finger status class
- * it hold data related to multiple screen arangement management
- */     
-typedef struct
-{               
-    int16_t      x;                // x-last reported x in area finger went first down
-    int16_t      y;                // y-last reported y in area finger went first down
-    uint8_t      area;             // area where finger went down, 0-finger UP, 1-main, 2-soft keys, 3-ticker, 5-ignore
-    unsigned int scanCode;         // last reported key scan code
-    int          keyAction;        // last reported key action
-    int8_t       fingerUpSent;     // flag if finger UP event was already reported when finger left
-                                   // original area 0-NO, 1-YES
-} finger_status_t;
 
 //#define MAX_NUM_FINGER	10		// Maximum possible fingering
-#define MAX_USING_FINGER_NUM	5
+#define MAX_USING_FINGER_NUM	10
 #endif
 
   /* Each client has this additional data */
 struct qt602240_data {
 	struct i2c_client *client;
 	struct input_dev *input_dev;
-	struct input_dev *input_ticker_dev;
 	struct work_struct ts_event_work;
 	unsigned int irq;
-	struct early_suspend	early_suspend;
-        struct qt602240_platform_data *pdata;	
+	struct early_suspend	early_suspend;	
 };
 
 /*------------------------------ functions prototype -----------------------------------*/
@@ -5387,7 +5338,7 @@ void read_all_register(void);
 static void qt602240_early_suspend(struct early_suspend *);
 static void qt602240_late_resume(struct early_suspend *);
 #endif	/* USE_TSP_EARLY_SUSPEND */
-#define MAX_USING_FINGER_NUM    5
+
 
 /* Module information */
 MODULE_DESCRIPTION("AT42QT602240 Touchscreen driver");

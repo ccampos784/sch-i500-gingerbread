@@ -22,7 +22,7 @@
 #include <plat/irqs.h>
 #include <mach/hardware.h>
 #include <mach/gpio.h>
-#include <mach/gpio-crespo.h>
+#include <mach/gpio-aries.h>
 #include <linux/jiffies.h>
 #include "qt602240.h"
 
@@ -33,26 +33,18 @@ struct workqueue_struct *qt602240_wq = NULL;
 struct qt602240_data *qt602240 = NULL;
 
 #if ENABLE_NOISE_TEST_MODE
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
                                        //botton_right    botton_left            center              top_right          top_left 
-unsigned char test_node[TEST_POINT_NUM] = {18,                  11,            84,                    148,                    141};
-#else
-
 unsigned char test_node[TEST_POINT_NUM] = {12,                  20,            104,                    188,                    196};        
-#endif
+
 unsigned int return_refer_0, return_refer_1, return_refer_2, return_refer_3, return_refer_4;
 unsigned int return_delta_0, return_delta_1, return_delta_2, return_delta_3, return_delta_4;
 uint16_t diagnostic_addr;
 #endif
 
 #ifdef _SUPPORT_MULTITOUCH_
-static report_finger_info_t fingerInfo[MAX_USING_FINGER_NUM];
+static report_finger_info_t fingerInfo[MAX_USING_FINGER_NUM]={ 0};
 static int qt_initial_ok=0;
 #endif
-
-static finger_status_t fingerStatus[MAX_USING_FINGER_NUM];
-static uint8_t mainScreenFingerDown = 0;   // number of fingers down on main screen
-static uint8_t tickerScreenFingerDown = 0; // number of fingers down on ticker screen
 
 #ifdef QT_STYLUS_ENABLE
 static int config_mode_val = 0;     //0: normal 1: stylus
@@ -62,14 +54,14 @@ static int config_mode_val = 0;     //0: normal 1: stylus
 static info_block_t info_block_data;
 static info_block_t *info_block=&info_block_data;
 
-static report_id_map_t report_id_map_data[30];
+static report_id_map_t report_id_map_data[30]={0};
 static report_id_map_t *report_id_map=&report_id_map_data;
 
-static object_t info_object_table[25];
+static object_t info_object_table[25]={0};
 static object_t *info_object_ptr=&info_object_table[0];
 
 /*! Message buffer holding the latest message received. */
-uint8_t quantum_msg[9];
+uint8_t quantum_msg[9]={0};
 #else
 static info_block_t *info_block;
 
@@ -188,7 +180,7 @@ void qt_Power_Config_Init(void)
 
 
     /* Set Active to Idle Timeout to 4 s (one unit = 200ms). */
-    power_config.actv2idleto = 50;
+    power_config.actv2idleto = 15;
 
 
     /* Write power config to chip. */
@@ -212,26 +204,14 @@ void qt_Power_Config_Init(void)
 
 void qt_Acquisition_Config_Init(void)
 {
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-    acquisition_config.chrgtime = 10;
-#else
-    acquisition_config.chrgtime = 7; // 2us
-#endif
+    acquisition_config.chrgtime 	= 7; // 2us
+    acquisition_config.driftst 	= 0; // 4s
     acquisition_config.reserved = 0;
-
     acquisition_config.tchdrift = 5; // 4s
-    acquisition_config.driftst = 0; // 4s
-
     acquisition_config.tchautocal = 0; // infinite
     acquisition_config.sync = 0; // disabled
-
     acquisition_config.atchcalst = 9;
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-    acquisition_config.atchcalsthr = 23;
-#else
     acquisition_config.atchcalsthr = 35;
-#endif
-
 
     if (write_acquisition_config(acquisition_config) != CFG_WRITE_OK)
     {
@@ -248,49 +228,6 @@ void qt_Acquisition_Config_Init(void)
 *  OUTPUT
 *
 * ***************************************************************************/
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-void qt_Multitouchscreen_Init(void)
-{
-    touchscreen_config.ctrl     = 143;
-    touchscreen_config.xorigin  = 0;
-    touchscreen_config.yorigin  = 0;
-    touchscreen_config.xsize    = 20;
-    touchscreen_config.ysize    = 10;
-    touchscreen_config.akscfg   = 0;
-	touchscreen_config.blen     = 32;
-    touchscreen_config.tchthr   = 40;
-    touchscreen_config.tchdi    = 2;
-    touchscreen_config.orient   = 5;
-    touchscreen_config.mrgtimeout = 0;
-    touchscreen_config.movhysti = 3;	
-    touchscreen_config.movhystn = 1;
-    touchscreen_config.movfilter= 46;
-#ifdef _SUPPORT_MULTITOUCH_	
-    touchscreen_config.numtouch = MAX_USING_FINGER_NUM;
-#else
-	touchscreen_config.numtouch = 1;
-#endif
-    touchscreen_config.mrghyst  = 5;
-    touchscreen_config.mrgthr   = 40;
-    touchscreen_config.amphyst  = 10;
-    touchscreen_config.xrange   = 992;
-    touchscreen_config.yrange   = 480;
-    touchscreen_config.xloclip  = 0;
-    touchscreen_config.xhiclip  = 0;
-    touchscreen_config.yloclip  = 0;
-    touchscreen_config.yhiclip  = 0;
-    touchscreen_config.xedgectrl= 143;
-    touchscreen_config.xedgedist= 40;
-    touchscreen_config.yedgectrl= 143;
-    touchscreen_config.yedgedist= 80;
-	touchscreen_config.jumplimit= 18;
-	
-    if (write_multitouchscreen_config(0, touchscreen_config) != CFG_WRITE_OK)
-    {
-        dprintk("[TSP] qt_Multitouchscreen_Init Configuration Fail!!! , Line %d \n\r", __LINE__);
-    }
-}
-#else
 
 void qt_Multitouchscreen_Init(void)
 {
@@ -301,64 +238,57 @@ void qt_Multitouchscreen_Init(void)
 #endif
     touchscreen_config.xorigin = 0;
     touchscreen_config.yorigin = 0;
-
     touchscreen_config.xsize = 19;
     touchscreen_config.ysize = 11;
 
     touchscreen_config.akscfg = 0;
-    touchscreen_config.blen = 0x21;
-#ifdef CONFIG_MACH_VICTORY
-    touchscreen_config.tchthr = 26;	
-#else
+	touchscreen_config.blen = 0x21;
+
     touchscreen_config.tchthr = 40;//45;
-#endif
+
     touchscreen_config.tchdi = 2;
-    touchscreen_config.orient = qt602240->pdata->orient;
+    touchscreen_config.orient = 1;
 
     touchscreen_config.mrgtimeout = 0;
-    touchscreen_config.movhysti = 3;    // 6;
+    touchscreen_config.movhysti = 3;	// 6;
 
-    
-    touchscreen_config.movhystn = 1;    // 5; ///1;
-    touchscreen_config.movfilter = 0x2e;    // 75; //0
-#ifdef _SUPPORT_MULTITOUCH_    
-    touchscreen_config.numtouch= MAX_USING_FINGER_NUM;    // it is 5 now and it can be set up to 10
+	
+    touchscreen_config.movhystn = 1;	// 5; ///1;
+    touchscreen_config.movfilter = 0x2e;	// 75; //0
+#ifdef _SUPPORT_MULTITOUCH_	
+    touchscreen_config.numtouch= MAX_USING_FINGER_NUM;	// it is 5 now and it can be set up to 10
 #else
-    touchscreen_config.numtouch= 1;
+	touchscreen_config.numtouch= 1;
 #endif
 
     touchscreen_config.mrghyst =5;
     touchscreen_config.mrgthr = 40; //20;	//5;
 	
     touchscreen_config.amphyst = 10;
-    touchscreen_config.xrange = qt602240->pdata->x_size;
-    touchscreen_config.yrange = qt602240->pdata->y_size;
+    touchscreen_config.xrange = 799;
+    touchscreen_config.yrange = 479;
     touchscreen_config.xloclip = 0;
     touchscreen_config.xhiclip = 0;
     touchscreen_config.yloclip = 0;
     touchscreen_config.yhiclip = 0;
+    touchscreen_config.xedgectrl = 143;
+    touchscreen_config.xedgedist = 40;
+    touchscreen_config.yedgectrl = 143;
+    touchscreen_config.yedgedist = 80;
 
-   	touchscreen_config.xedgectrl = 143;
-    	touchscreen_config.xedgedist = 40;
-    	touchscreen_config.yedgectrl = 143;
-    	touchscreen_config.yedgedist = 80;
-
-    touchscreen_config.jumplimit = 18;
+	touchscreen_config.jumplimit = 18;
     
     if (write_multitouchscreen_config(0, touchscreen_config) != CFG_WRITE_OK)
     {
         dprintk("[TSP] qt_Multitouchscreen_Init Configuration Fail!!! , Line %d \n\r", __LINE__);
     }
 }
-#endif
+
 #ifdef QT_STYLUS_ENABLE
 void qt_Multitouchscreen_stylus_Init(void)
 {
-  #if defined(CONFIG_S5PV210_GARNETT_DELTA) || defined(CONFIG_MACH_VICTORY) 
-    touchscreen_config.tchthr = 16;//45;
-  #else
-    touchscreen_config.tchthr = 25;//45;
-  #endif 
+
+    touchscreen_config.tchthr = 25;//45;	
     touchscreen_config.movhysti = 1;
     
 //    touchscreen_config.movhystn = 5;///1;
@@ -374,11 +304,9 @@ void qt_Multitouchscreen_stylus_Init(void)
 
 void qt_Multitouchscreen_normal_Init(void)
 {
-    #if defined(CONFIG_S5PV210_GARNETT_DELTA) || defined(CONFIG_MACH_VICTORY)
-    touchscreen_config.tchthr = 26;//45;	
-    #else
-    touchscreen_config.tchthr = 40;//45;
-    #endif    
+
+    touchscreen_config.tchthr = 40;//45;	
+    
     touchscreen_config.movhysti = 3;
 //    touchscreen_config.movhystn = 6;///1;
     touchscreen_config.movfilter = 0x2e;//0
@@ -488,11 +416,8 @@ void qt_Gpio_Pwm_Init(void)
 
 void qt_Grip_Face_Suppression_Config_Init(void)
 {
-    #ifdef CONFIG_S5PV210_GARNETT_DELTA
-    gripfacesuppression_config.ctrl = 0;
-    #else 
+
     gripfacesuppression_config.ctrl = 7;        //-> disable PALM bit
-    #endif
     gripfacesuppression_config.xlogrip = 0;
     gripfacesuppression_config.xhigrip = 0;
     gripfacesuppression_config.ylogrip = 0;
@@ -540,22 +465,17 @@ void qt_Noise_Suppression_Config_Init(void)
     noise_suppression_config.gcafll = 0;
 
     noise_suppression_config.actvgcafvalid = 3;
-noise_suppression_config.freqhopscale = 0;///1;
-#if defined(CONFIG_S5PV210_GARNETT_DELTA) || defined(CONFIG_MACH_VICTORY)
-    noise_suppression_config.noisethr = 20;     //35;
-    noise_suppression_config.freq[0] = 20;      //5;    // 6;//10;
-    noise_suppression_config.freq[1] = 24;      //15;   // 11;//15;
-    noise_suppression_config.freq[2] = 30;      //25;   //16;//20;
-    noise_suppression_config.freq[3] = 40;      //35;   // 19;//25;
-    noise_suppression_config.freq[4] = 48;      //45;   // 21;//30;
-#else
-    noise_suppression_config.noisethr = 30; 	//35;
+
+	noise_suppression_config.noisethr = 30; 	//35;
+
+    noise_suppression_config.freqhopscale = 0;///1;
+
     noise_suppression_config.freq[0] = 29; 	//5;	// 6;//10;
     noise_suppression_config.freq[1] = 34;	//15;	// 11;//15;
     noise_suppression_config.freq[2] = 39;	//25;	//16;//20;
     noise_suppression_config.freq[3] = 49;	//35;	// 19;//25;
     noise_suppression_config.freq[4] = 58;	//45;	// 21;//30;
-#endif
+    
     noise_suppression_config.idlegcafvalid = 3;
 
 
@@ -715,24 +635,16 @@ void qt_Two_touch_Gesture_Config_Init(void)
 
 void qt_CTE_Config_Init(void)
 {
-
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-    cte_config.ctrl     = 0;
-    cte_config.cmd      = 0;	
-    cte_config.mode     = 4;
-#else
     /* Set CTE config */
     cte_config.ctrl = 1;
     cte_config.cmd = 0;    
     cte_config.mode = 3;
-#endif    
+    
     cte_config.idlegcafdepth = 16;///4;
     cte_config.actvgcafdepth = 63;    //8;
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-        cte_config.voltage = 15;
-#else
+
         cte_config.voltage = 0x3c;
-#endif
+
     /* Write CTE config to chip. */
     if (get_object_address(SPT_CTECONFIG_T28, 0) != OBJECT_NOT_FOUND)
     {
@@ -2526,22 +2438,12 @@ int set_tsp_for_ta_detect(int state)
 	int ret = 1;
 
 	if(state) {
-#ifdef CONFIG_MACH_VICTORY
-		touchscreen_config.tchthr = 46;
-		noise_suppression_config.noisethr = 13;
-#else	
 		touchscreen_config.tchthr = 70;
 		noise_suppression_config.noisethr = 20;
-#endif
 		printk(KERN_DEBUG "[TSP] TA Detect!!!\n");
 	} else {
-#ifdef CONFIG_MACH_VICTORY
-		touchscreen_config.tchthr = 26;
-		noise_suppression_config.noisethr = 20;
-#else
 		touchscreen_config.tchthr = 40;
 		noise_suppression_config.noisethr = 30;
-#endif
 		printk(KERN_DEBUG "[TSP] TA NON-Detect!!!\n");
 	}
 
@@ -2568,9 +2470,9 @@ void TSP_forced_release(void)
 
         input_report_abs(qt602240->input_dev, ABS_MT_POSITION_X, fingerInfo[i].x);
         input_report_abs(qt602240->input_dev, ABS_MT_POSITION_Y, fingerInfo[i].y);
-        input_report_abs(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, fingerInfo[i].pressure);    // 0̸ Release, ƴϸ Press (Down or Move)
-	input_report_abs(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, fingerInfo[i].size);    // (ID<<8) | Size
-	input_report_abs(qt602240->input_dev, ABS_MT_TRACKING_ID, i); // i = Finger ID
+        input_report_abs(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, fingerInfo[i].pressure);    // 0이면 Release, 아니면 Press 상태(Down or Move)
+        input_report_abs(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, fingerInfo[i].size);   
+	input_report_abs(qt602240->input_dev, ABS_MT_TRACKING_ID, i); // i = Finger ID 
         input_mt_sync(qt602240->input_dev);
 
         if ( fingerInfo[i].pressure == 0 ) fingerInfo[i].pressure= -1;
@@ -2596,9 +2498,9 @@ void TSP_forced_release_forOKkey(void)
 
         input_report_abs(qt602240->input_dev, ABS_MT_POSITION_X, fingerInfo[i].x);
         input_report_abs(qt602240->input_dev, ABS_MT_POSITION_Y, fingerInfo[i].y);
-        input_report_abs(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, fingerInfo[i].pressure);    // 0̸ Release, ƴϸ Press (Down or Move)
-        input_report_abs(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, fingerInfo[i].size);    // (ID<<8) | Size
-	input_report_abs(qt602240->input_dev, ABS_MT_TRACKING_ID, i); // i = Finger ID
+        input_report_abs(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, fingerInfo[i].pressure);    // 0이면 Release, 아니면 Press 상태(Down or Move)
+        input_report_abs(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, fingerInfo[i].size); 
+	input_report_abs(qt602240->input_dev, ABS_MT_TRACKING_ID, i); // i = Finger ID 
         input_mt_sync(qt602240->input_dev);
 
         if ( fingerInfo[i].pressure == 0 ) fingerInfo[i].pressure= -1;
@@ -2610,144 +2512,8 @@ void TSP_forced_release_forOKkey(void)
 
 EXPORT_SYMBOL(TSP_forced_release_forOKkey);
 
-static void _input_report_finger_info(struct i2c_ts_driver * pTsDriver, report_finger_info_t * pFingerInfo, finger_status_t * pFingerStatus , int track_id)
-{
-    unsigned long x, y;
-    int action, area;
-    unsigned int scanCode;
-    int16_t status;
-    if( pTsDriver == NULL || pFingerInfo == NULL || pFingerStatus == NULL)
-        return;
 
-    x = pFingerInfo->x;
-    y = pFingerInfo->y;
-
-    status = pFingerInfo->pressure;
-    area = 0; // reset area value
-    // set values based on area finger is down
-    if (y<=MAIN_SCREEN_HEIGHT) {
-        // main screen area
-        area = 1;
-        if (tickerScreenFingerDown==0) {
-            mainScreenFingerDown += (pFingerStatus->area==0);
-        } else {
-            // Finger is already down at ticker, ignore. area-5 == ignore
-            area = 5;
-        }
-
-    } else if ( y < (MAIN_SCREEN_HEIGHT+SOFTKEYS_SCREEN_HEIGHT) ) {        
-        // soft keys screen area
-		
-
-        area = 2;
-        action = status == 0 ? DEFAULT_PRESSURE_UP : DEFAULT_PRESSURE_DOWN;
-        scanCode = google_soft_keys[ abs(x/SOFTKEYS_WIDTH) % 4 ];
-        // check if finger did not move between soft keys areas
-        if ((scanCode!=pFingerStatus->scanCode) 
-            && (pFingerStatus->keyAction==DEFAULT_PRESSURE_DOWN)) {
-            // finger moved to another key, unhold previous key
-            scanCode = pFingerStatus->scanCode;
-            action = DEFAULT_PRESSURE_UP;
-        } 
-
-		// ignore touch events above the printed area
-		if( (y > MAIN_SCREEN_HEIGHT) && (y < MAIN_SCREEN_HEIGHT + 20))
-		{
-			pr_err("[TSP] ignoring (%d,%d)\n", x,y);
-			area=4;			
-		}
-
-
-    } else {
-        // ticker screen area
-        area = 3;
-        y -= (MAIN_SCREEN_HEIGHT+SOFTKEYS_SCREEN_HEIGHT);
-        if (mainScreenFingerDown==0) {
-            // update number of fingers down, if needed
-            tickerScreenFingerDown += (pFingerStatus->area==0);
-        } else {
-            // Finger is already down at main screen, ignore, area-5 == ignore
-            area = 5;
-        }
-    }
-    // do house keeping in case finger went to other part of screen
-    if (pFingerStatus->area == area || !pFingerStatus->area) {
-        // finger is in same area where it went down first time, or
-        // this is firt finger down event, remember values
-        pFingerStatus->x = x;
-        pFingerStatus->y = y;
-        // reset finger up reporting, since we are back in original area
-        pFingerStatus->fingerUpSent = 0;
-    } else if (!pFingerStatus->fingerUpSent ) {
-        // finger moved to different area than where it went down
-        // signal finger UP to previous area
-        x = pFingerStatus->x;
-        y = pFingerStatus->y;
-        status = 0;
-        action = DEFAULT_PRESSURE_UP;
-        scanCode = pFingerStatus->scanCode;
-        area = pFingerStatus->area;
-        // mark finger up as reported, so we do not send it again
-        pFingerStatus->fingerUpSent = 1;
-    } else {
-        // for all other cases ignore event, send nothing to upper layers
-        area = 0;
-    }
-
-    // report event to choosen device
-    switch ( area ) {
-        case 1: // event from main screen
-          input_report_abs(qt602240->input_dev, ABS_MT_POSITION_X, x);
-          input_report_abs(qt602240->input_dev, ABS_MT_POSITION_Y, y);
-          input_report_abs(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, status);
-          input_report_abs(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, pFingerInfo->size);
-	  input_report_abs(qt602240->input_dev, ABS_MT_TRACKING_ID, track_id); // i = Finger ID   	
-          input_mt_sync(qt602240->input_dev);
-          pFingerStatus->area = 1;
-          break;
-
-        case 2: // event from soft key area 
-          // filter out same button events
-	 printk("softkey repoted\n");
-          input_report_key(qt602240->input_dev, scanCode, action );
-          input_mt_sync(qt602240->input_dev);
-          // update last key event values
-          pFingerStatus->scanCode = scanCode;
-          pFingerStatus->keyAction = action;
-          pFingerStatus->area = 2;
-          break;
-
-        case 3: // event from ticker screen
-	 printk("ticker repoted\n");
-          input_report_abs(qt602240->input_ticker_dev, ABS_MT_POSITION_X, x);
-          input_report_abs(qt602240->input_ticker_dev, ABS_MT_POSITION_Y, y);
-          input_report_abs(qt602240->input_ticker_dev, ABS_MT_TOUCH_MAJOR, status);
-          input_report_abs(qt602240->input_ticker_dev, ABS_MT_WIDTH_MAJOR, pFingerInfo->size);
-	  input_report_abs(qt602240->input_dev, ABS_MT_TRACKING_ID, track_id); // i = Finger ID
-          input_mt_sync(qt602240->input_ticker_dev);
-          pFingerStatus->area = 3;
-          break;
-
-        default: // event ignored
-          break;
-    }
-
-    // reset finger status if it went up
-    if ( pFingerInfo->pressure == 0 ) {
-        // clean finger status
-        if (pFingerStatus->area==1 && mainScreenFingerDown!=0) {
-            mainScreenFingerDown--;
-        } else if (pFingerStatus->area==3 && tickerScreenFingerDown!=0) {
-            tickerScreenFingerDown--;
-        }
-        // finger is up, reset all related values
-        pFingerStatus->area = 0;
-        pFingerStatus->fingerUpSent = 0;
-        pFingerStatus->keyAction = DEFAULT_PRESSURE_UP;
-    }
-}
-
-void  get_message(struct work_struct * p)
+void  get_message(void)
 {
     unsigned long x, y;
     unsigned int press = 3;
@@ -2755,7 +2521,6 @@ void  get_message(struct work_struct * p)
     int size=2, i;    
     uint8_t touch_message_flag = 0;
        uint8_t one_touch_input_flag=0;//hugh 0312
-	int fingersDown = 0;
 
 #ifdef _SUPPORT_MULTITOUCH_
     static int nPrevID= -1;
@@ -2765,7 +2530,7 @@ void  get_message(struct work_struct * p)
 
     static long cnt=0;
     cnt++;
-    disable_irq(qt602240->client->irq);
+
 
     if (driver_setup == DRIVER_SETUP_OK) {
     #ifdef _SUPPORT_TOUCH_AMPLITUDE_
@@ -2786,37 +2551,17 @@ void  get_message(struct work_struct * p)
                             touch_state_val=0;
                         }
                         fingerInfo[i].pressure= 0;
-			if(qt602240->pdata->is_tickertab)
-				_input_report_finger_info( qt602240, &fingerInfo[i], &fingerStatus[i], i);
-			else {
-                        	input_report_abs(qt602240->input_dev, ABS_MT_POSITION_X, fingerInfo[i].x);
-	                        input_report_abs(qt602240->input_dev, ABS_MT_POSITION_Y, fingerInfo[i].y);
-        	                input_report_abs(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, fingerInfo[i].pressure);    // 0̸ Release, ƴϸ Press (Down or Move)
-                                input_report_abs(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, fingerInfo[i].size);    // (ID<<8) | Size
-				input_report_abs(qt602240->input_dev, ABS_MT_TRACKING_ID, i); // i = Finger ID
-                        	input_mt_sync(qt602240->input_dev);
-			}
+                        input_report_abs(qt602240->input_dev, ABS_MT_POSITION_X, fingerInfo[i].x);
+                        input_report_abs(qt602240->input_dev, ABS_MT_POSITION_Y, fingerInfo[i].y);
+                        input_report_abs(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, fingerInfo[i].pressure);    // 0이면 Release, 아니면 Press 상태(Down or Move)
+                        input_report_abs(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, fingerInfo[i].size);
+				input_report_abs(qt602240->input_dev, ABS_MT_TRACKING_ID, i); // i = Finger ID 
+                        input_mt_sync(qt602240->input_dev);
             
                         if ( fingerInfo[i].pressure == 0 ) fingerInfo[i].pressure= -1;
-                        else if( fingerInfo[i].pressure > 0 ){
-				 one_touch_input_flag++;//hugh 0312
-				if ( qt602240->pdata->is_tickertab)
-					fingersDown++;
-			}
-			}
-
-			if ( qt602240->pdata->is_tickertab) {
-				// do cleaning just in case
-				if (fingersDown==0) {
-					    mainScreenFingerDown=0;
-					    tickerScreenFingerDown=0;
-				}
-			}
-
+                        else if( fingerInfo[i].pressure > 0 ) one_touch_input_flag++;//hugh 0312
+                    }
                     input_sync(qt602240->input_dev);
-
-			if ( qt602240->pdata->is_tickertab)
-				input_sync(qt602240->input_ticker_dev);
                 } else {
                     touch_message_flag = 1;
                     one_touch_input_flag = 1; //hugh 0312
@@ -2825,7 +2570,7 @@ void  get_message(struct work_struct * p)
             
             if(quantum_msg[0] < 2  || quantum_msg[0] >= 12) {
             
-                printk(KERN_DEBUG "[TSP] msg id =  %x %x %x %x %x %x %x %x %x\n", quantum_msg[0], quantum_msg[1], quantum_msg[2],\
+                dprintk("[TSP] msg id =  %x %x %x %x %x %x %x %x %x\n", quantum_msg[0], quantum_msg[1], quantum_msg[2],\
                      quantum_msg[3], quantum_msg[4], quantum_msg[5], quantum_msg[6], quantum_msg[7], quantum_msg[8]);
 
                 if((quantum_msg[0] == 1)&&((quantum_msg[1]&0x10) == 0x10)) {
@@ -2843,11 +2588,7 @@ void  get_message(struct work_struct * p)
                         check_chip_calibration(one_touch_input_flag);
                     }
                 }
-		 if(readl(gpio_pend_mask_mem)&(0x1<<5))
-			writel(readl(gpio_pend_mask_mem)|(0x1<<5), gpio_pend_mask_mem);
-			s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_SFN(0xf));
-			enable_irq(qt602240->client->irq);
-		return ;
+                return ;
             } 
             
 #ifdef _SUPPORT_MULTITOUCH_
@@ -2861,7 +2602,7 @@ void  get_message(struct work_struct * p)
             y = quantum_msg[3];
             y = y << 2;
             y = y | ((quantum_msg[4] & 0x0C)  >> 2);
-	    //printk(KERN_ERR"*******qt602240****x = %d, y = %d*********\n", x, y); 
+
             size = quantum_msg[5];
             /* 
              * quantum_msg[1] & 0x80 : 10000000 -> DETECT 
@@ -2873,19 +2614,15 @@ void  get_message(struct work_struct * p)
              * quantum_msg[1] & 0x02 : 00000010 -> SUPPRESS
              */
 #ifdef _SUPPORT_MULTITOUCH_
-			if ( (quantum_msg[1] & 0x20 )) {    // Release
-				fingerInfo[id].size= size;
-				fingerInfo[id].pressure= 0;
-				bChangeUpDn= 1;
-				touch_state_val = 0;
-				printk(KERN_DEBUG "[TSP]### Finger Up \n");
+            if ( (quantum_msg[1] & 0x20 )) {    // Release
+                fingerInfo[id].size= size;
+                fingerInfo[id].pressure= 0;
+                bChangeUpDn= 1;
+		   touch_state_val = 0;
             }
             else if ( (quantum_msg[1] & 0x80) && (quantum_msg[1] & 0x40) ) {   // Detect & Press
-#ifdef CONFIG_MACH_VICTORY
-		    if(id == 0)
-			    touch_state_val=1;
-#endif
-		touch_message_flag = 1; //20100217 julia
+                touch_message_flag = 1; //20100217 julia
+                touch_state_val=1;
                 fingerInfo[id].size= size;
 #ifdef _SUPPORT_TOUCH_AMPLITUDE_
                 fingerInfo[id].pressure= quantum_msg[6];
@@ -2895,7 +2632,6 @@ void  get_message(struct work_struct * p)
                 fingerInfo[id].x= (int16_t)x;
                 fingerInfo[id].y= (int16_t)y;
                 bChangeUpDn= 1;
-                printk(KERN_DEBUG "[TSP]### Finger Down \n");
             }
             else if ( (quantum_msg[1] & 0x80) && (quantum_msg[1] & 0x10) ) {    // Detect & Move
                 touch_message_flag = 1;
@@ -2940,101 +2676,37 @@ void  get_message(struct work_struct * p)
 	
 #ifdef _SUPPORT_MULTITOUCH_
     if ( nPrevID >= id || bChangeUpDn ) {
-	fingersDown = 0;
         for ( i= 0; i<MAX_USING_FINGER_NUM; ++i ) {
             if ( fingerInfo[i].pressure == -1 ) continue;
-			if(qt602240->pdata->is_tickertab)
-				_input_report_finger_info( qt602240, &fingerInfo[i], &fingerStatus[i], i);
-			else {
-		            input_report_abs(qt602240->input_dev, ABS_MT_POSITION_X, fingerInfo[i].x);
-	        	    input_report_abs(qt602240->input_dev, ABS_MT_POSITION_Y, fingerInfo[i].y);
-	 		    input_report_abs(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, fingerInfo[i].pressure);    // 0̸ Release, ƴϸ Press (Down or Move)
-                            input_report_abs(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, fingerInfo[i].size);    // (ID<<8) | Size
-			    input_report_abs(qt602240->input_dev, ABS_MT_TRACKING_ID, i); // i = Finger ID
-	        	    input_mt_sync(qt602240->input_dev);
-			}
+
+            input_report_abs(qt602240->input_dev, ABS_MT_POSITION_X, fingerInfo[i].x);
+            input_report_abs(qt602240->input_dev, ABS_MT_POSITION_Y, fingerInfo[i].y);
+            input_report_abs(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, fingerInfo[i].pressure);    // 0이면 Release, 아니면 Press 상태(Down or Move)
+            input_report_abs(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, fingerInfo[i].size);
+		input_report_abs(qt602240->input_dev, ABS_MT_TRACKING_ID, i); // i = Finger ID 
+            input_mt_sync(qt602240->input_dev);
 
             if ( fingerInfo[i].pressure == 0 ) fingerInfo[i].pressure= -1;
-            else if( fingerInfo[i].pressure > 0 ) {
-			one_touch_input_flag++;//hugh 0312
-			
-			if(qt602240->pdata->is_tickertab)
-				fingersDown++;
-            }
-	}
-
-	if(qt602240->pdata->is_tickertab){
-		if (fingersDown==0) {
-			    mainScreenFingerDown=0;
-			    tickerScreenFingerDown=0;
-			}
-	}
-		
+            else if( fingerInfo[i].pressure > 0 ) one_touch_input_flag++;//hugh 0312
+        }
         input_sync(qt602240->input_dev);
-	 if(qt602240->pdata->is_tickertab)
-		input_sync(qt602240->input_ticker_dev);
     }
     nPrevID= id;
 #else
 
     if(press == 1) {
+        input_report_abs(qt602240->input_dev, ABS_X, x);
+        input_report_abs(qt602240->input_dev, ABS_Y, y);
+        if( btn_report == 1)
+            input_report_key(qt602240->input_dev, BTN_TOUCH, 1);
 
-	if(qt602240->pdata->is_tickertab){
-			// now decide which part of the screen user touched
-		if (y<MAIN_SCREEN_HEIGHT) {
-			input_report_abs(qt602240->input_dev, ABS_X, x);
-			input_report_abs(qt602240->input_dev, ABS_Y, y);
-			if( btn_report == 1)
-				input_report_key(qt602240->input_dev, BTN_TOUCH, 1);
-
-			input_sync(qt602240->input_dev);
-			qt602240->screen_id = MAIN_SCREEN;
-		} else if ( y < (MAIN_SCREEN_HEIGHT+SOFTKEYS_SCREEN_HEIGHT) ) {
-			// this is soft key area, determine which key we should emulate
-	 printk("softkey repoted\n");
-			input_report_key(qt602240->input_dev, google_soft_keys[ abs(x/SOFTKEYS_WIDTH) % 4 ], DEFAULT_PRESSURE_DOWN );
-			input_mt_sync(qt602240->input_dev);
-			qt602240->screen_id = SOFTKEYS_SCREEN;
-		} else {
-	 printk("ticker repoted\n");
-			input_report_abs(qt602240->input_ticker_dev, ABS_X, x);
-			//ZA: fix for Y coordinate being sent without reducing it for ticker area
-			//input_report_abs(qt602240->input_ticker_dev, ABS_Y, y);
-			input_report_abs(qt602240->input_ticker_dev, ABS_Y, y-(MAIN_SCREEN_HEIGHT+SOFTKEYS_SCREEN_HEIGHT));
-			//ZA: end
-			if( btn_report == 1)
-				input_report_key(qt602240->input_ticker_dev, BTN_TOUCH, 1);
-
-			input_sync(qt602240->input_ticker_dev);
-			qt602240->screen_id = TICKER_SCREEN
-		}
-	}else {
-	        input_report_abs(qt602240->input_dev, ABS_X, x);
-        	input_report_abs(qt602240->input_dev, ABS_Y, y);
-	 	if( btn_report == 1)
-	            input_report_key(qt602240->input_dev, BTN_TOUCH, 1);
-
-        	input_sync(qt602240->input_dev);
-	}
+        input_sync(qt602240->input_dev);
         amplitude = quantum_msg[6];
         dprintk("[TSP]%s x=%3d, y=%3d, BTN=%d, size=%d, amp=%d\n",__FUNCTION__, x, y,press, size , amplitude);
     }
     else if(press == 0) {
-	 if(qt602240->pdata->is_tickertab){
-		if (qt602240->screen_id == MAIN_SCREEN) {
-			input_sync(qt602240->input_dev);
-			amplitude = quantum_msg[6];
-		} else if ( qt602240->screen_id == TICKER_SCREEN ) {
-			input_sync(qt602240->input_ticker_dev);
-			amplitude = quantum_msg[6];
-		} else { // soft keys
-			input_report_key(qt602240->input_dev, google_soft_keys[ abs(x/SOFTKEYS_WIDTH) % 4 ], DEFAULT_PRESSURE_UP);
-			input_mt_sync(qt602240->input_dev);
-		}
-	} else {
-       		input_sync(qt602240->input_dev);
-	        amplitude = quantum_msg[6];
-	}
+        input_sync(qt602240->input_dev);
+        amplitude = quantum_msg[6];
         dprintk("[TSP]%s x=%3d, y=%3d, BTN=%d, size=%d, amp=%d\n",__FUNCTION__, x, y,press, size , amplitude);
     }
 #endif
@@ -3043,12 +2715,7 @@ void  get_message(struct work_struct * p)
     if(touch_message_flag && (cal_check_flag)) {
         check_chip_calibration(one_touch_input_flag);
     }
-  
-   if(readl(gpio_pend_mask_mem)&(0x1<<5))
-        writel(readl(gpio_pend_mask_mem)|(0x1<<5), gpio_pend_mask_mem); 
 
-    s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_SFN(0xf));
-    enable_irq(qt602240->client->irq);
 
     return ;
 }
@@ -3256,9 +2923,9 @@ void write_message_to_usart(uint8_t msg[], uint8_t length)
 {
     int i;
     for (i=0; i < length; i++) {
-        printk(KERN_ERR"0x%02x", msg[i]);
+        dprintk("0x%02x ", msg[i]);
     }
-    printk(KERN_ERR"\n\r");
+    dprintk("\n\r");
 }
 
 /*
@@ -3269,21 +2936,13 @@ void write_message_to_usart(uint8_t msg[], uint8_t length)
  * received to USART1 port of EVK1011 board.
  */
 void message_handler(U8 *msg, U8 length)
-{
-
-	printk(KERN_ERR"**********Touch message_handler**********\n");
-//	usart_write_line(&AVR32_USART1, "Touch IC message: ");
-//	write_message_to_usart(msg, length);
-//	usart_write_line(&AVR32_USART1, "\n");
+{  
 }
 
 
 irqreturn_t qt602240_irq_handler(int irq, void *dev_id)
 {
-
-     s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_INPUT);
-     queue_work(qt602240_wq, &qt602240->ts_event_work);
-	
+    get_message();
 
     return IRQ_HANDLED;
 }
@@ -3291,36 +2950,24 @@ irqreturn_t qt602240_irq_handler(int irq, void *dev_id)
 int qt602240_probe(struct i2c_client *client,
                const struct i2c_device_id *id)
 {
-	int ret, err = 0;    
+    int ret;    
 	int key;
 
-	qt602240->client = client;
-	qt602240->pdata  = client->dev.platform_data;
-	qt602240->client->irq =  qt602240->pdata->irq;    
-	printk("irq number = %d\n", qt602240->client->irq);
-	dprintk("qt602240_i2c is attached..\n");
+    qt602240->client = client;
+    qt602240->client->irq = IRQ_TOUCH_INT;
 
-	//    DEBUG;
-	printk(KERN_DEBUG"+-----------------------------------------+\n");
-	printk(KERN_DEBUG "|  Quantum Touch Driver Probe!            |\n");
-	printk(KERN_DEBUG"+-----------------------------------------+\n");
+    dprintk("qt602240_i2c is attached..\n");
 
-	if(gpio_is_valid(qt602240->pdata->touch_en)){
-		if (gpio_request(qt602240->pdata->touch_en, "TOUCH_EN")){
-			printk("gpio_request failed %s\n", __func__);
-			return -EINVAL;
-		}
-	} else{
-		printk("Invalid gpio %s\n", __func__);
-		return -EINVAL;
-	}
-	
-	gpio_set_value(qt602240->pdata->touch_en, 1);
-	msleep(70);
+//    DEBUG;
+    printk(KERN_DEBUG"+-----------------------------------------+\n");
+    printk(KERN_DEBUG "|  Quantum Touch Driver Probe!            |\n");
+    printk(KERN_DEBUG"+-----------------------------------------+\n");
 
-	INIT_WORK(&qt602240->ts_event_work, get_message );
+    gpio_set_value(GPIO_TOUCH_EN, 1);
+    msleep(70);
 
-/*end*/
+  //  INIT_WORK(&qt602240->ts_event_work, get_message );
+
     qt602240->input_dev = input_allocate_device();
     if (qt602240->input_dev == NULL) {
         ret = -ENOMEM;
@@ -3331,69 +2978,30 @@ int qt602240_probe(struct i2c_client *client,
     set_bit(EV_SYN, qt602240->input_dev->evbit);
     set_bit(EV_KEY, qt602240->input_dev->evbit);
     set_bit(BTN_TOUCH, qt602240->input_dev->keybit);
-
-    if(qt602240->pdata->is_tickertab){
-	set_bit(google_soft_keys[0], qt602240->input_dev->keybit);
-	set_bit(google_soft_keys[1], qt602240->input_dev->keybit);
-	set_bit(google_soft_keys[2], qt602240->input_dev->keybit);
-	set_bit(google_soft_keys[3], qt602240->input_dev->keybit);
-    }
-
     set_bit(EV_ABS, qt602240->input_dev->evbit);
 
     input_set_abs_params(qt602240->input_dev, ABS_X, 0, 479, 0, 0);
     input_set_abs_params(qt602240->input_dev, ABS_Y, 0, 799, 0, 0);
+
+  
 #ifdef _SUPPORT_MULTITOUCH_
     input_set_abs_params(qt602240->input_dev, ABS_MT_POSITION_X, 0, 479, 0, 0);
-    input_set_abs_params(qt602240->input_dev, ABS_MT_POSITION_Y, 0, 799, 0, 0);
+	input_set_abs_params(qt602240->input_dev, ABS_MT_POSITION_Y, 0, 799, 0, 0);
 #endif
 
     input_set_abs_params(qt602240->input_dev, ABS_PRESSURE, 0, 255, 0, 0);
     input_set_abs_params(qt602240->input_dev, ABS_TOOL_WIDTH, 0, 15, 0, 0);
 #ifdef _SUPPORT_MULTITOUCH_
     input_set_abs_params(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
+    input_set_abs_params(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, 0, 30, 0, 0);
+	input_set_abs_params(qt602240->input_dev, ABS_MT_TRACKING_ID, 0, MAX_USING_FINGER_NUM-1, 0, 0);
 
-    if(qt602240->pdata->is_tickertab)
-	    input_set_abs_params(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, 0, 15, 0, 0);
-    else
-	    input_set_abs_params(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, 0, 30, 0, 0);
-    input_set_abs_params(qt602240->input_dev, ABS_MT_TRACKING_ID, 0, MAX_USING_FINGER_NUM-1, 0, 0);
-#endif
+#endif    
 
     ret = input_register_device(qt602240->input_dev);
     if (ret) {
         printk(KERN_DEBUG "qt602240_probe: Unable to register %s input device\n", qt602240->input_dev->name);
         goto err_input_register_device_failed;
-    }
-
-    if(qt602240->pdata->is_tickertab){
-	qt602240->input_ticker_dev = input_allocate_device();
-	if (qt602240->input_ticker_dev == NULL) {
-		ret = -ENOMEM;
-		printk(KERN_ERR "qt602240_probe: Failed to allocate input device number 2\n");
-		goto err_input_dev_alloc_failed;
-	}
-	qt602240->input_ticker_dev->name = "qt602240_ts_input_tt";
-	set_bit(EV_SYN, qt602240->input_ticker_dev->evbit);
-	set_bit(EV_KEY, qt602240->input_ticker_dev->evbit);
-	set_bit(BTN_TOUCH, qt602240->input_ticker_dev->keybit);
-	set_bit(EV_ABS, qt602240->input_ticker_dev->evbit);
-	input_set_abs_params(qt602240->input_ticker_dev, ABS_X, 0, FULL_SCREEN_WIDTH, 0, 0);
-	input_set_abs_params(qt602240->input_ticker_dev, ABS_Y, 0, TICKER_SCREEN_HEIGHT, 0, 0);
-#ifdef _SUPPORT_MULTITOUCH_
-	input_set_abs_params(qt602240->input_ticker_dev, ABS_MT_POSITION_X, 0, FULL_SCREEN_WIDTH, 0, 0);
-	input_set_abs_params(qt602240->input_ticker_dev, ABS_MT_POSITION_Y, 0, TICKER_SCREEN_HEIGHT, 0, 0);
-	input_set_abs_params(qt602240->input_ticker_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
-	input_set_abs_params(qt602240->input_ticker_dev, ABS_MT_WIDTH_MAJOR, 0, 15, 0, 0);
-#endif
-	input_set_abs_params(qt602240->input_ticker_dev, ABS_PRESSURE, 0, 255, 0, 0);
-	input_set_abs_params(qt602240->input_ticker_dev, ABS_TOOL_WIDTH, 0, 15, 0, 0);
-
-	ret = input_register_device(qt602240->input_ticker_dev);
-	if (ret) {
-		printk(KERN_ERR "qt602240_probe: Unable to register %s input device\n", qt602240->input_dev->name);
-		goto err_input_register_device_failed;
-	}
     }
 
 #ifdef QT_FIRMUP_ENABLE
@@ -3404,23 +3012,21 @@ int qt602240_probe(struct i2c_client *client,
     quantum_touch_probe();
 #endif
 
-    disable_irq(qt602240->client->irq);
+  set_irq_type(IRQ_TOUCH_INT, IRQ_TYPE_LEVEL_LOW); // IRQ_TYPE_EDGE_FALLING);
+    s3c_gpio_cfgpin(GPIO_TOUCH_INT, S3C_GPIO_SFN(0xf));
 
     touchscreen_power_state_on = 1;
     set_tsp_threshhold();
-	
-    ret = request_irq(qt602240->client->irq, qt602240_irq_handler, IRQF_DISABLED, "qt602240 irq", qt602240);
+
+    ret = request_threaded_irq(qt602240->client->irq, NULL,  qt602240_irq_handler,  IRQF_TRIGGER_LOW | IRQF_ONESHOT, "qt602240 irq", qt602240);
     if (ret == 0) {
         dprintk("[TSP] qt602240_probe: Start touchscreen %s\n", qt602240->input_dev->name);
     }
     else {
         dprintk("[TSP] request_irq failed\n");
-    } 
-   
-    set_irq_type(qt602240->pdata->irq, IRQ_TYPE_LEVEL_LOW); // IRQ_TYPE_EDGE_FALLING);
-    s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_SFN(0xf));
-    s3c_gpio_setpull(qt602240->pdata->touch_int, S3C_GPIO_PULL_NONE);
-   
+    }
+
+
     dprintk("%s ,  %d\n",__FUNCTION__, __LINE__ );
 #ifdef USE_TSP_EARLY_SUSPEND
     qt602240->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
@@ -3430,6 +3036,8 @@ int qt602240_probe(struct i2c_client *client,
 #endif    /* CONFIG_HAS_EARLYSUSPEND */
 
     qt_initial_ok = 1;
+
+
     return 0;
 
 err_input_register_device_failed:
@@ -3451,7 +3059,6 @@ static int qt602240_remove(struct i2c_client *client)
     free_irq(qt602240->client->irq, 0);
     input_unregister_device(qt602240->input_dev);
     kfree(qt602240);
-    gpio_free(qt602240->pdata->touch_en);
     i2c_set_clientdata(client, NULL);
 
     return 0;
@@ -3465,7 +3072,7 @@ static int qt602240_suspend(struct i2c_client *client, pm_message_t mesg)
 
     ENTER_FUNC;
 
-    disable_irq(qt602240->client->irq);
+
     /* Set power config. */
     /* Set Idle Acquisition Interval to 32 ms. */
     power_config_sleep.idleacqint = 0;
@@ -3482,7 +3089,6 @@ static int qt602240_suspend(struct i2c_client *client, pm_message_t mesg)
     for (i=0; i<MAX_USING_FINGER_NUM ; i++)
         fingerInfo[i].pressure = -1;
 #endif
-	
     LEAVE_FUNC;
     return 0;
 }
@@ -3509,7 +3115,6 @@ static int qt602240_resume(struct i2c_client *client)
     good_check_flag=0;
 
     calibrate_chip();
-    enable_irq(qt602240->client->irq);
     LEAVE_FUNC;
     return 0;
 
@@ -3524,8 +3129,9 @@ static void qt602240_early_suspend(struct early_suspend *h)
 
     ENTER_FUNC;
     disable_irq(qt602240->client->irq);
-    
-    touchscreen_power_state_on = 0;	
+
+    touchscreen_power_state_on = 0;
+
     /* Set power config. */
     /* Set Idle Acquisition Interval to 32 ms. */
     power_config_sleep.idleacqint = 0;
@@ -3547,11 +3153,11 @@ static void qt602240_early_suspend(struct early_suspend *h)
     qt_timer_state=0;
 
     /*reset the gpio's for the sleep configuration*/
-     s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_INPUT);
-    s3c_gpio_setpull(qt602240->pdata->touch_int, S3C_GPIO_PULL_DOWN);
+    s3c_gpio_cfgpin(GPIO_TOUCH_INT, S3C_GPIO_INPUT);
+    s3c_gpio_setpull(GPIO_TOUCH_INT, S3C_GPIO_PULL_DOWN);
 
-    gpio_set_value(qt602240->pdata->touch_en, 0);
-
+    gpio_set_value(GPIO_TOUCH_EN, 0);
+    
     LEAVE_FUNC;
 }
 
@@ -3561,10 +3167,10 @@ static void qt602240_late_resume(struct early_suspend *h)
 
     ENTER_FUNC;
 
-    gpio_set_value(qt602240->pdata->touch_en, 1);
+    gpio_set_value(GPIO_TOUCH_EN, 1);
     msleep(70);
-    s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_SFN(0xf));
-    s3c_gpio_setpull(qt602240->pdata->touch_int, S3C_GPIO_PULL_NONE);
+    s3c_gpio_cfgpin(GPIO_TOUCH_INT, S3C_GPIO_SFN(0xf));
+    s3c_gpio_setpull(GPIO_TOUCH_INT, S3C_GPIO_PULL_UP);
 
     if ( (ret = write_power_config(power_config)) != CFG_WRITE_OK) {
         /* "Power config write failed!\n" */
@@ -3580,10 +3186,12 @@ static void qt602240_late_resume(struct early_suspend *h)
 
     msleep(20);
     calibrate_chip();
-    touchscreen_power_state_on = 1; 
-    set_tsp_threshhold();	
-    enable_irq(qt602240->client->irq);   
 
+    touchscreen_power_state_on = 1;
+    set_tsp_threshhold();
+
+    enable_irq(qt602240->client->irq);
+    
     LEAVE_FUNC;
 }
 #endif    // End of USE_TSP_EARLY_SUSPEND
@@ -3608,7 +3216,6 @@ struct i2c_driver qt602240_i2c_driver = {
     .resume        = qt602240_resume,
 #endif //USE_TSP_EARLY_SUSPEND
 };
-
 
 extern struct class *sec_class;
 struct device *ts_dev;
@@ -3637,9 +3244,10 @@ static ssize_t i2c_store(
 static ssize_t gpio_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     dprintk("qt602240 GPIO Status\n");
-    dprintk("TOUCH_EN  : %s\n", gpio_get_value(qt602240->pdata->touch_en)? "High":"Low");
+    dprintk("TOUCH_EN  : %s\n", gpio_get_value(GPIO_TOUCH_EN)? "High":"Low");
+    //dprintk("TOUCH_RST : %s\n", gpio_get_value(GPIO_TOUCH_RST)? "High":"Low");
     dprintk("TOUCH_RST is NC\n");
-    dprintk("TOUCH_INT : %s\n", gpio_get_value(qt602240->pdata->touch_int)? "High":"Low");
+    dprintk("TOUCH_INT : %s\n", gpio_get_value(GPIO_TOUCH_INT)? "High":"Low");
 
     return sprintf(buf, "%s\n", buf);
 }
@@ -3649,15 +3257,27 @@ static ssize_t gpio_store(
         const char *buf, size_t size)
 {
     if(strncmp(buf, "ENHIGH", 6) == 0 || strncmp(buf, "enhigh", 6) == 0) {
-        gpio_set_value(qt602240->pdata->touch_en, 1);
+        gpio_set_value(GPIO_TOUCH_EN, 1);
         dprintk("set TOUCH_EN High.\n");
         msleep(100);
     }
     if(strncmp(buf, "ENLOW", 5) == 0 || strncmp(buf, "enlow", 5) == 0) {
-        gpio_set_value(qt602240->pdata->touch_en, 0);
+        gpio_set_value(GPIO_TOUCH_EN, 0);
         dprintk("set TOUCH_EN Low.\n");
         msleep(100);
     }
+
+    if(strncmp(buf, "RSTHIGH", 7) == 0 || strncmp(buf, "rsthigh", 7) == 0) {
+//        gpio_set_value(GPIO_TOUCH_RST, 1);
+        dprintk("TOUCH_RST is NC.\n");
+        msleep(100);
+    }
+    if(strncmp(buf, "RSTLOW", 6) == 0 || strncmp(buf, "rstlow", 6) == 0) {
+//        gpio_set_value(GPIO_TOUCH_RST, 0);
+        dprintk("TOUCH_RST is NC\n");
+        msleep(100);
+    }
+
     return size;
 }
 
@@ -3721,10 +3341,9 @@ uint8_t boot_unlock(void)
 
 void TSP_Restart(void)
 {
-    
-    gpio_set_value(qt602240->pdata->touch_en, 0);
-    mdelay(300);
-    gpio_set_value(qt602240->pdata->touch_en, 1);
+    gpio_set_value(GPIO_TOUCH_EN, 0);
+    msleep(300);
+    gpio_set_value(GPIO_TOUCH_EN, 1);
 }
 
 uint8_t QT_Boot(void)
@@ -4017,19 +3636,11 @@ static ssize_t setup_store(
     return size;
 }
 
-static ssize_t qt602240_call_release_touch(struct device *dev, struct device_attribute *attr, char *buf)
-{
-        printk(" %s is called", __func__);
-        TSP_forced_release_forOKkey();
-        return sprintf(buf,"0\n");
-}
-
 static DEVICE_ATTR(gpio, S_IRUGO | S_IWUSR, gpio_show, gpio_store);
 static DEVICE_ATTR(i2c, S_IRUGO | S_IWUSR, i2c_show, i2c_store);
 static DEVICE_ATTR(setup, S_IRUGO | S_IWUSR, setup_show, setup_store);
 static DEVICE_ATTR(firmware1, S_IRUGO | S_IWUSR, firmware1_show, firmware1_store);
 static DEVICE_ATTR(key_threshold, S_IRUGO | S_IWUSR, key_threshold_show, key_threshold_store);
-static DEVICE_ATTR(call_release_touch, S_IRUGO | S_IWUSR, qt602240_call_release_touch, NULL);
 
 /*------------------------------ for tunning ATmel - start ----------------------------*/
 /*
@@ -4081,6 +3692,7 @@ static ssize_t set_power_store(struct device *dev, struct device_attribute *attr
     return size;
 }
 static DEVICE_ATTR(set_power, 0664, set_power_show, set_power_store);
+
 
 
 /*
@@ -4144,6 +3756,7 @@ static ssize_t set_acquisition_store(struct device *dev, struct device_attribute
     return size;
 }
 static DEVICE_ATTR(set_acquisition, 0664, set_acquisition_show, set_acquisition_store);
+
 /* Set touchscreen config. 
    touchscreen_config.ctrl = 131;
    touchscreen_config.xorigin = 0;
@@ -5030,8 +4643,6 @@ unsigned int qt_firm_status_data=0;
 void set_qt_update_exe(struct work_struct * p)
 {
 
-    disable_irq(qt602240->client->irq);
-
 
     if(!QT_Boot()) {                
         qt_firm_status_data=2;        // firmware update success
@@ -5042,7 +4653,7 @@ void set_qt_update_exe(struct work_struct * p)
     }
     TSP_Restart();
     quantum_touch_probe();
-    enable_irq(qt602240->client->irq);
+
 }
 
 
@@ -5127,8 +4738,6 @@ static ssize_t qt602240_config_mode_store(struct device *dev,    struct device_a
         dev_err(dev, "Invalid values(0x%x)\n", *buf);
         return -EINVAL;
     }
-
-    disable_irq(qt602240->client->irq);
     switch(mode)
     {
         case 1: {
@@ -5164,13 +4773,11 @@ static ssize_t qt602240_config_mode_store(struct device *dev,    struct device_a
             dprintk("invalid mode\n");
             break;
     }
-    enable_irq(qt602240->client->irq);
+
     return count;
 }
 
-//static DEVICE_ATTR(config_mode, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, qt602240_config_mode_show, qt602240_config_mode_store);
-static DEVICE_ATTR(config_mode, 0664 , qt602240_config_mode_show, qt602240_config_mode_store);
-
+static DEVICE_ATTR(config_mode, 0664, qt602240_config_mode_show, qt602240_config_mode_store);
 #endif
 /*------------------------------ for tunning ATmel - end ----------------------------*/
 int __init qt602240_init(void)
@@ -5187,13 +4794,15 @@ int __init qt602240_init(void)
     gpio_set_value(GPIO_TOUCH_EN, 1);
     msleep(70);
 
+	int tint = GPIO_TOUCH_INT;
+	s3c_gpio_cfgpin(tint, S3C_GPIO_INPUT);
+	s3c_gpio_setpull(tint, S3C_GPIO_PULL_UP);
     qt602240 = kzalloc(sizeof(struct qt602240_data), GFP_KERNEL);
     if (qt602240 == NULL) {
         return -ENOMEM;
     }
 
     qt_time_point = jiffies_to_msecs(jiffies);
-    gpio_pend_mask_mem = ioremap(INT_PEND_BASE, 0x10);
 
     ret = i2c_add_driver(&qt602240_i2c_driver);
     if(ret) dprintk("[%s], i2c_add_driver failed...(%d)\n", __func__, ret);
@@ -5251,10 +4860,6 @@ int __init qt602240_init(void)
     
     if (device_create_file(ts_dev, &dev_attr_key_threshold) < 0)
         pr_err("Failed to create device file(%s)!\n", dev_attr_key_threshold.attr.name);
-
-    if (device_create_file(ts_dev, &dev_attr_call_release_touch) < 0)
-        pr_err("Failed to create device file(%s)!\n", dev_attr_call_release_touch.attr.name);
-
 
     dprintk("[QT] %s/%d, platform_driver_register!!\n",__func__,__LINE__);
 
