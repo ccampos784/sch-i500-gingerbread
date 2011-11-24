@@ -129,7 +129,7 @@ on fs
     # mount yaffs2 mtd@cache /cache nosuid nodev
     mount rfs /dev/block/stl9 /system check=no
     mount rfs /dev/block/stl9 /system ro remount
-    mount ext4 /dev/block/stl9 /system wait noatime nosuid nodev
+    mount ext4 /dev/block/stl9 /system wait noatime noauto_da_alloc nosuid nodev nodiratime barrier=0 nobh
 
 # SEC_DMCRYPT for MC_CRYPT_ROOT before apply_disk_policy or apply_sec_devenc_init
     #chown system system /efs
@@ -149,7 +149,7 @@ on fs
 # SEC_DMCRYPT crypt flag added data
     # mount rfs /dev/block/mmcblk0p2 /data nosuid nodev check=no
     mount rfs /dev/block/mmcblk0p1 /data nosuid nodev crypt check=no
-    mount ext4 /dev/block/mmcblk0p1 /data wait noatime nosuid nodev
+    mount ext4 /dev/block/mmcblk0p1 /data noatime noauto_da_alloc nosuid nodev nodiratime barrier=0 nobh
     chown system system /data
     chmod 0771 /data    
 
@@ -157,7 +157,7 @@ on fs
   #SEC_DMCRYPT crypt flag added
     mount rfs /dev/block/stl10 /dbdata nosuid nodev crypt check=no
     #mount rfs /dev/block/stl10 /dbdata nosuid nodev check=no
-    mount ext4 /dev/block/stl10 /dbdata wait noatime nosuid nodev
+    mount ext4 /dev/block/stl10 /dbdata wait noatime noauto_da_alloc nosuid nodev nodiratime barrier=0 nobh
     chown system system /dbdata
     chmod 0771 /dbdata
     chmod 0771 /dbdata
@@ -171,7 +171,7 @@ on fs
     chown system system /dbdata/db-journal
     chmod 0777 /dbdata/db-journal
     mount rfs /dev/block/stl11 /cache nosuid nodev check=no
-    mount ext4 /dev/block/stl11 /cache wait noatime nosuid nodev
+    mount ext4 /dev/block/stl11 /cache wait noatime noauto_da_alloc nosuid nodev nodiratime barrier=0 nobh
 
     mkdir /mnt/.lfs 0755 root root
     mount j4fs /dev/block/stl6 /mnt/.lfs
@@ -569,11 +569,15 @@ on boot
     # Set init its forked children's oom_adj.
     write /proc/1/oom_adj -16
 
-    # Tweak background writeout
-    write /proc/sys/vm/dirty_expire_centisecs 200
-    write /proc/sys/vm/dirty_background_ratio  35
-    write /proc/sys/vm/dirty_ratio  65
-    write /proc/sys/vm/vfs_cache_pressure  40
+    # Tweak background writeout and other various tweaks
+    write /proc/sys/vm/swappiness 0
+    write /proc/sys/vm/panic_on_oom 0
+    write /proc/sys/vm/laptop_mode 0
+    write /proc/sys/vm/dirty_expire_centisecs 500
+    write /proc/sys/vm/dirty_writeback_centisecs 1000
+    write /proc/sys/vm/dirty_background_ratio  70
+    write /proc/sys/vm/dirty_ratio  90
+    write /proc/sys/vm/vfs_cache_pressure  50
     
     # tweak sdcard readahead cache
     write /sys/block/mmcblk1/bdi/read_ahead_kb 2048
