@@ -1,6 +1,7 @@
 #!/bin/bash
 
-cd src/kernel
+export CURRENTDIR=`pwd`
+cd $CURRENTDIR/src/kernel
 make clean mrproper
 cd ../..
 exit
