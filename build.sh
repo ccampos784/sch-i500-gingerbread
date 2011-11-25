@@ -1,5 +1,13 @@
 #!/bin/bash
 
+######################################
+##           PWGB Kernel            ##
+##      Based off EH09 source       ##
+##          By ccampos784           ##
+######################################
+
+## BUILDING SCRIPT (by djp952) ##
+
 # TOOLCHAIN / TOOLCHAIN_PREFIX
 #
 # External ARM Toolchain

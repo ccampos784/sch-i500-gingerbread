@@ -1,7 +1,13 @@
-PWGB Kernel v1.0-voodoo (11/25/2011)
+######################################
+##           PWGB Kernel            ##
+##      Based off EH09 source       ##
+##          By ccampos784           ##
+######################################
+
+##    VERSION: 1.0 (11/25/2011)     ##
 This is a fork of djp952's branch containing the EH09 kernel source with more changes.
 
-Features:
+FEATURES:
  - Overclocking support up to 1.3 gHz
  - Undervolting support, use Voltage Control from the market
  - Undervolted Screen (3.0V->2.6V), RAM (1.8V->1.6V), and ADC (3.3V->3.0V)
@@ -34,3 +40,14 @@ Features:
     - Cypress touchkey driver ported from I9000
     - BLNv9 support
     - Boot animation support
+    
+HOW TO BUILD:
+Edit the following files and set them to point to the location of the toolchain:
+build.sh - TOOLCHAIN, TOOLCHAIN_PREFIX
+src/kernel/Makefile - CROSS_COMPILE
+Then, you can simply run the build.sh script. The Codesourcery 2010.09 ARM toolchain is recommended.
+Output will be in out/ and will include Odin- and CWM-flashable packages.
+
+HOW TO CLEAN AFTER BUILDING:
+Run the clean.sh script.
+

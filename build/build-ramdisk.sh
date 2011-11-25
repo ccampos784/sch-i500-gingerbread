@@ -9,9 +9,6 @@ echo
 # RAMDISKREFDIR
 RAMDISKREFDIR=$REFDIR/ramdisk
 
-# RAMDISKSRCDIR
-RAMDISKSRCDIR=$SRCDIR/ramdisk
-
 # RAMDISKBINDIR
 export RAMDISKBINDIR=$BINDIR/ramdisk
 
@@ -27,9 +24,6 @@ cp -R $RAMDISKREFDIR/* $RAMDISKBINDIR/
 
 # Remove unwanted files from the ramdisk image
 rm -f $RAMDISKBINDIR/lib/modules/hotspot_event_monitoring.ko
-
-# Copy modified versions of the ramdisk files into the output directory
-cp -R $RAMDISKSRCDIR/* $RAMDISKBINDIR/
 
 exit
 

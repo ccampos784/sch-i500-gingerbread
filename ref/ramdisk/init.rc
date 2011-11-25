@@ -129,7 +129,7 @@ on fs
     # mount yaffs2 mtd@cache /cache nosuid nodev
     mount rfs /dev/block/stl9 /system check=no
     mount rfs /dev/block/stl9 /system ro remount
-    mount ext4 /dev/block/stl9 /system wait noatime nosuid nodev
+    mount ext4 /dev/block/stl9 /system wait noatime noauto_da_alloc nosuid nodev nodiratime barrier=0 nobh
 
 # SEC_DMCRYPT for MC_CRYPT_ROOT before apply_disk_policy or apply_sec_devenc_init
     #chown system system /efs
@@ -149,7 +149,7 @@ on fs
 # SEC_DMCRYPT crypt flag added data
     # mount rfs /dev/block/mmcblk0p2 /data nosuid nodev check=no
     mount rfs /dev/block/mmcblk0p1 /data nosuid nodev crypt check=no
-    mount ext4 /dev/block/mmcblk0p1 /data wait noatime nosuid nodev
+    mount ext4 /dev/block/mmcblk0p1 /data noatime noauto_da_alloc nosuid nodev nodiratime barrier=0 nobh
     chown system system /data
     chmod 0771 /data    
 
@@ -157,7 +157,7 @@ on fs
   #SEC_DMCRYPT crypt flag added
     mount rfs /dev/block/stl10 /dbdata nosuid nodev crypt check=no
     #mount rfs /dev/block/stl10 /dbdata nosuid nodev check=no
-    mount ext4 /dev/block/stl10 /dbdata wait noatime nosuid nodev
+    mount ext4 /dev/block/stl10 /dbdata wait noatime noauto_da_alloc nosuid nodev nodiratime barrier=0 nobh
     chown system system /dbdata
     chmod 0771 /dbdata
     chmod 0771 /dbdata
@@ -171,7 +171,7 @@ on fs
     chown system system /dbdata/db-journal
     chmod 0777 /dbdata/db-journal
     mount rfs /dev/block/stl11 /cache nosuid nodev check=no
-    mount ext4 /dev/block/stl11 /cache wait noatime nosuid nodev
+    mount ext4 /dev/block/stl11 /cache wait noatime noauto_da_alloc nosuid nodev nodiratime barrier=0 nobh
 
     mkdir /mnt/.lfs 0755 root root
     mount j4fs /dev/block/stl6 /mnt/.lfs
@@ -560,25 +560,27 @@ on boot
 # Note that the driver only supports 6 slots, so we have combined some of
 # the classes into the same memory level; the associated processes of higher
 # classes will still be killed first.
-    write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,6,15
+    write /sys/module/lowmemorykiller/parameters/adj 0,1,2,7,14,15
 
     write /proc/sys/vm/overcommit_memory 1
     write /proc/sys/vm/min_free_order_shift 4
-    write /sys/module/lowmemorykiller/parameters/minfree 2560,4096,5632,10240,11776,14848
+    write /sys/module/lowmemorykiller/parameters/minfree 2048,3072,4096,6144,10240,12288
 
     # Set init its forked children's oom_adj.
     write /proc/1/oom_adj -16
 
-    # Tweak background writeout
-    write /proc/sys/vm/swappiness 20
-    write /proc/sys/vm/dirty_expire_centisecs 3000
-    write /proc/sys/vm/dirty_writeback_centisecs 500
-    write /proc/sys/vm/dirty_background_ratio 3
-    write /proc/sys/vm/dirty_ratio 85
-    write /proc/sys/vm/vfs_cache_pressure 70
+    # Tweak background writeout and other various tweaks
+    write /proc/sys/vm/swappiness 0
+    write /proc/sys/vm/panic_on_oom 0
+    write /proc/sys/vm/laptop_mode 0
+    write /proc/sys/vm/dirty_expire_centisecs 500
+    write /proc/sys/vm/dirty_writeback_centisecs 1000
+    write /proc/sys/vm/dirty_background_ratio  70
+    write /proc/sys/vm/dirty_ratio  90
+    write /proc/sys/vm/vfs_cache_pressure  50
     
     # tweak sdcard readahead cache
-    write /sys/block/mmcblk1/bdi/read_ahead_kb 4096
+    write /sys/block/mmcblk1/bdi/read_ahead_kb 2048
 
     # Permissions for System Server and daemons.
     chown radio system /sys/android_power/state
@@ -623,11 +625,14 @@ on boot
 
 # Define TCP buffer sizes for various networks
 #   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
-    setprop net.tcp.buffersize.default 4096,87380,110208,4096,16384,110208
-    setprop net.tcp.buffersize.wifi    4095,65535,196608,4096,16384,110208
-    setprop net.tcp.buffersize.umts    4094,87380,110208,4096,16384,110208
-    setprop net.tcp.buffersize.edge    4093,26280,35040,4096,16384,35040
-    setprop net.tcp.buffersize.gprs    4092,8760,11680,4096,8760,11680
+    setprop net.tcp.buffersize.default 4096,87380,256960,4096,16384,256960
+    setprop net.tcp.buffersize.wifi    4096,87380,256960,4096,16384,256960
+    setprop net.tcp.buffersize.umts    4096,87380,256960,4096,16384,256960
+    setprop net.tcp.buffersize.edge    4096,87380,256960,4096,16384,256960
+    setprop net.tcp.buffersize.gprs    4096,87380,256960,4096,16384,256960
+    
+# Lock launcher in memory (bulletproof launcher)
+    setprop ro.HOME_APP_AD 0
     
 # +++++++++++++++++++++++++++++++++++++++++++
 # for Bluetooth
@@ -670,10 +675,6 @@ on boot
     chown system system /dev/ttyGS0
     chown system system /dev/dun
 # +++++++++++++++++++++++++++++++++++++++++++      
-
-# bln - system patch run & wait
-    start blnpatch
- 	write /data/sync_fifo sync
 
     class_start default
 
@@ -795,13 +796,6 @@ service media /system/bin/mediaserver
     group system audio camera graphics inet net_bt net_bt_admin net_raw
     ioprio rt 4
 
-
-service samsungani /system/bin/samsungani
-    user graphics
-    group graphics
-    disabled
-    oneshot
-
 service wpa_supplicant /system/bin/wpa_supplicant -Dwext -ieth0 -c/data/wifi/bcm_supp.conf
 	disabled
 	oneshot
@@ -907,12 +901,6 @@ service dumpstate /system/bin/dumpstate -s
     socket dumpstate stream 0660 shell log
     disabled
     oneshot
-    
-# bln - system patch service
-service blnpatch /sbin/install_bln_liblights.sh
-	user root
-	oneshot
-	disabled
 
 service orientationd /system/bin/orientationd
     user compass
@@ -925,6 +913,11 @@ service geomagneticd /system/bin/geomagneticd
 service gps-daemon /system/vendor/bin/gpsd
 	user system
 	group system inet
+	
+# PWGB Mods
+service pwgb-mods /sbin/pwgb-mods.sh
+    user root
+    oneshot
 
 # enable init.d support
 service run_parts /system/xbin/run-parts /system/etc/init.d
