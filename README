@@ -1,4 +1,4 @@
-PWGB Kernel v0.5-voodoo
+PWGB Kernel v0.6-voodoo (11/24/2011)
 This is a fork of djp952's branch containing the EH09 kernel source with more changes.
 
 Features:
@@ -8,6 +8,8 @@ Features:
  - TinyRCU enabled
  - Voodoo-capable Ramdisk by imoseyon
  - Touchscreen driver ported from I9000
+ - SIO and V(R) schedulers added
+ - SmartassV2 governor added
  - In-call audio boost
  - CIFS and TUN support
  - Support for third-party batteries
