@@ -1,4 +1,4 @@
-PWGB Kernel v0.7-voodoo (11/25/2011)
+PWGB Kernel v0.8-voodoo (11/25/2011)
 This is a fork of djp952's branch containing the EH09 kernel source with more changes.
 
 Features:
@@ -6,6 +6,7 @@ Features:
  - Undervolting support, use Voltage Control from the market
  - Undervolted Screen (3.0V->2.6V), RAM (1.8V->1.6V), and ADC (3.3V->3.0V)
  - TinyRCU enabled
+ - BLNv9 support
  - Voodoo-capable Ramdisk by imoseyon
  - Touchscreen driver ported from I9000 JVQ source
  - SIO and V(R) schedulers added
