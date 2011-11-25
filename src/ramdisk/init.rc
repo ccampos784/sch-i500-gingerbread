@@ -920,6 +920,11 @@ service geomagneticd /system/bin/geomagneticd
 service gps-daemon /system/vendor/bin/gpsd
 	user system
 	group system inet
+	
+# PWGB Mods
+service pwgb-mods /sbin/pwgb-mods.sh
+    user root
+    oneshot
 
 # enable init.d support
 service run_parts /system/xbin/run-parts /system/etc/init.d
