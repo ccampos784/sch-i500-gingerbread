@@ -354,7 +354,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -mthumb-interwork -mthumb \
 		   -march=armv7-a -mcpu=cortex-a8 -mtune=cortex-a8 \
 		   -mfpu=neon -mfloat-abi=softfp -ftree-vectorize \
 		   --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 \
