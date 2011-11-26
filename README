@@ -4,7 +4,7 @@
 ##          By ccampos784           ##
 ######################################
 
-##    VERSION: 1.0 (11/25/2011)     ##
+##    VERSION: 1.1 (11/25/2011)     ##
 This is a fork of djp952's branch containing the EH09 kernel source with more changes.
 
 FEATURES:
@@ -20,8 +20,8 @@ FEATURES:
  - CIFS and TUN support
  - Support for third-party batteries
  - SD Card speed tweak
- - Kernel HZ set to 512 HZ
- - User HZ set to 256 HZ
+ - Kernel HZ set to 500 HZ
+ - User HZ set to 250 HZ
  - Raised screen frequency from 60 to 72 - should allow more FPS
  - Voodoo Sound v10
  - Working Flashlight mode for Camera LED
