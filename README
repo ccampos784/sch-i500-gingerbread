@@ -13,7 +13,7 @@ FEATURES:
  - Undervolted Screen (3.0V->2.6V), RAM (1.8V->1.6V), and ADC (3.3V->3.0V)
  - TinyRCU enabled
  - Voodoo-capable Ramdisk by imoseyon
- - Touchscreen driver ported from I9000 JVQ source
+ - Touchscreen driver ported from I9000 JVT source
  - SIO and V(R) schedulers added
  - SmartassV2, Interactive, InteractiveX, and OndemandX governors added
  - In-call audio boost
@@ -29,7 +29,6 @@ FEATURES:
  - Lowmemorykiller tweaks
  - Network speed tweaks
  - Various governor and scheduler tweaks
- - Bulletproof launcher (launcher won't be killed in low-memory situations)
  - Some changes from djp952 include:
     - I9000 WiFi driver (elimites hotspot monitoring)
     - Fixed setlocalversion script to fix use of closed source modules

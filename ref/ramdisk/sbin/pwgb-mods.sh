@@ -1,5 +1,13 @@
 #!/system/bin/sh
 
+######################################
+##           PWGB Kernel            ##
+##      Based off EH09 source       ##
+##          By ccampos784           ##
+######################################
+
+## POST-BOOT SCRIPT ##
+
 # Remount /system rw
 busybox mount -o remount,rw /
 busybox mount -o remount,rw /system
@@ -23,6 +31,15 @@ while [ 1 ]; do
       busybox pkill samsungani
       exit;
   fi
+done
+
+# Disable IOSTATS to reduce overhead
+STL=`ls -d /sys/block/stl*`;
+BML=`ls -d /sys/block/bml*`;
+MMC=`ls -d /sys/block/mmc*`;
+for k in $STL $BML $MMC;
+do
+ echo "0" > $k/queue/iostats
 done
 
 # Remount /system ro

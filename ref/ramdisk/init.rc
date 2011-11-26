@@ -580,7 +580,7 @@ on boot
     write /proc/sys/vm/vfs_cache_pressure  50
     
     # tweak sdcard readahead cache
-    write /sys/block/mmcblk1/bdi/read_ahead_kb 2048
+    write /sys/block/mmcblk1/bdi/read_ahead_kb 4096
 
     # Permissions for System Server and daemons.
     chown radio system /sys/android_power/state
@@ -630,9 +630,6 @@ on boot
     setprop net.tcp.buffersize.umts    4096,87380,256960,4096,16384,256960
     setprop net.tcp.buffersize.edge    4096,87380,256960,4096,16384,256960
     setprop net.tcp.buffersize.gprs    4096,87380,256960,4096,16384,256960
-    
-# Lock launcher in memory (bulletproof launcher)
-    setprop ro.HOME_APP_AD 0
     
 # +++++++++++++++++++++++++++++++++++++++++++
 # for Bluetooth
