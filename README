@@ -4,7 +4,7 @@
 ##          By ccampos784           ##
 ######################################
 
-##    VERSION: 1.1 (11/25/2011)     ##
+##    VERSION: 1.2 (11/26/2011)     ##
 This is a fork of djp952's branch containing the EH09 kernel source with more changes.
 
 FEATURES:
@@ -29,6 +29,7 @@ FEATURES:
  - Lowmemorykiller tweaks
  - Network speed tweaks
  - Various governor and scheduler tweaks
+ - Various ARM fixes and tweaks
  - Some changes from djp952 include:
     - I9000 WiFi driver (elimites hotspot monitoring)
     - Fixed setlocalversion script to fix use of closed source modules
